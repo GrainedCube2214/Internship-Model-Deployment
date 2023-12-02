@@ -5,9 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Price Prediction Model Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='form_styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
 </head>
 <body>
     <h1>Stock Market Prediction Model Demo</h1>
+    <div id="themeSwitchButton" class="theme-switch-button" onclick="toggleTheme()">
+        <i id="themeIcon" class="fa-regular fa-sun"></i>
+        <i id="themeIconDark" class="fa-solid fa-moon" style="display: none;"></i>
+    </div>
     <form method="POST" action="/stock/predict">
         Date (DD-MMM-YYYY): <input type="text" name="date"><br>
         Open: <input type="float" name="open"><br>
@@ -27,6 +34,18 @@
     <script>
         function goBack() {
             window.history.back();
+        }
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            const themeIconDark = document.getElementById('themeIconDark');
+
+            body.classList.toggle("light-mode");
+            body.classList.toggle("dark-mode");
+
+            // Toggle the visibility of the theme icons
+            themeIcon.style.display = themeIcon.style.display === 'none' ? 'inline-block' : 'none';
+            themeIconDark.style.display = themeIconDark.style.display === 'none' ? 'inline-block' : 'none';
         }
     </script>
 </body>

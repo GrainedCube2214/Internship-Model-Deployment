@@ -5,10 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Appointment Time Prediction Model Demo</title>
-<!--    <link rel="stylesheet" href="{{ url_for('static', filename='form_styles.css') }}">-->
+    <link rel="stylesheet" href="{{ url_for('static', filename='form_styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <h1>Appointment Time Prediction Model Demo</h1>
+    <div id="themeSwitchButton" class="theme-switch-button" onclick="toggleTheme()">
+        <i id="themeIcon" class="fa-regular fa-sun"></i>
+        <i id="themeIconDark" class="fa-solid fa-moon" style="display: none;"></i>
+    </div>
     <form method="POST" action="/appointment/predict">
         <!--Gender(M:1, F:0): <input type="int" name="gender"><br>-->
         Scheduled Date: <input type="text" name="scheduled_date"><br>
@@ -33,6 +38,18 @@
     <script>
         function goBack() {
             window.history.back();
+        }
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            const themeIconDark = document.getElementById('themeIconDark');
+
+            body.classList.toggle("light-mode");
+            body.classList.toggle("dark-mode");
+
+            // Toggle the visibility of the theme icons
+            themeIcon.style.display = themeIcon.style.display === 'none' ? 'inline-block' : 'none';
+            themeIconDark.style.display = themeIconDark.style.display === 'none' ? 'inline-block' : 'none';
         }
     </script>
 </body>

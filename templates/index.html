@@ -11,8 +11,8 @@
 <body>
     <h1>Welcome to the Combined Flask App</h1>
     <div id="themeSwitchButton" class="theme-switch-button" onclick="toggleTheme()">
-        <i id="themeIcon" class="fas fa-sun"></i>
-        <i id="themeIconDark" class="fas fa-moon"></i>
+        <i id="themeIcon" class="fa-regular fa-sun"></i>
+        <i id="themeIconDark" class="fa-solid fa-moon" style="display: none;"></i>
     </div>
     <ul>
         <li><a href="/noshow">Noshow Classification Model</a></li>
@@ -22,10 +22,15 @@
     <script>
         function toggleTheme() {
             const body = document.body;
-            const container = document.getElementById('movieContainer');
+            const themeIcon = document.getElementById('themeIcon');
+            const themeIconDark = document.getElementById('themeIconDark');
 
             body.classList.toggle("light-mode");
             body.classList.toggle("dark-mode");
+
+            // Toggle the visibility of the theme icons
+            themeIcon.style.display = themeIcon.style.display === 'none' ? 'inline-block' : 'none';
+            themeIconDark.style.display = themeIconDark.style.display === 'none' ? 'inline-block' : 'none';
         }
     </script>
 </body>
