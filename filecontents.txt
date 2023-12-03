@@ -1,0 +1,628 @@
+.\appointment_time_prediction.py
+# appointment_time_prediction.py
+from flask import Flask, render_template, request, Blueprint
+import pandas as pd
+import joblib
+import numpy as np
+from sklearn.preprocessing import OrdinalEncoder
+
+appointment_app = Blueprint('appointment_app', __name__, template_folder='templates')
+
+# Load the trained machine learning model
+model = joblib.load('regression_model.pkl')  # Adjust the model file name if needed
+
+# Define the preprocessing function
+def preprocess_input(data):
+    df = pd.DataFrame(data, index=[0])
+    df.dropna(inplace=True)
+    df['Alcoholism'] = df['Alcoholism'].apply(lambda x: 1 if x.lower()=="yes" or x.lower()=="y"  else 0)
+    df['Hipertension'] = df['Hipertension'].apply(lambda x: 1 if x.lower()=="yes" or x.lower()=="y"  else 0)
+    df['Diabetes'] = df['Diabetes'].apply(lambda x: 1 if x.lower()=="yes" or x.lower()=="y"  else 0)
+    df['Cancelled'] = df['Cancelled'].apply(lambda x: 1 if x.lower()=="yes" or x.lower()=="y"  else 0)
+    # Converting to datetime format
+    df['Scheduled_Date'] = pd.to_datetime(df['Scheduled_Date'])
+    df['Appointment_Date'] = pd.to_datetime(df['Appointment_Date'])
+
+    df['Day_Difference'] = (df['Appointment_Date'] - df['Scheduled_Date']).dt.days
+    df['Day_Difference'] = df['Day_Difference'].astype(int)
+    
+    # Feature extraction
+    df['Scheduled_Year'] = df['Scheduled_Date'].dt.year
+    df['Scheduled_Month'] = df['Scheduled_Date'].dt.month
+    df['Scheduled_Day'] = df['Scheduled_Date'].dt.day
+    df.drop(['Scheduled_Date'], axis=1, inplace=True)
+    
+    df['Appointment_Month'] = df['Appointment_Date'].dt.month
+    df['Appointment_Day'] = df['Appointment_Date'].dt.day
+    df.drop(['Appointment_Date'], axis=1, inplace=True)
+       
+    #Convert all int64 features to float64
+    for col in df.columns[df.dtypes == np.int64]:
+        df[col] = df[col].astype(np.float64)
+    
+    # Drop duplicates and remaining null values
+    df.drop_duplicates(inplace=True)
+    df.dropna(inplace=True) 
+    
+    #Customize column order
+    df = df[['Cancelled', 'Appointment_Month', 'Scheduled_Month', 'Day_Difference', 
+             'Diabetes', 'Scheduled_Day', 'Hipertension', 'Alcoholism', 'Scheduled_Year', 
+             'Appointment_Day', 'Age', 'Appointment_Hour', 'Rate_Of_Cancellation']]
+    
+    print(df)
+    
+    return df
+
+# Define a route for the appointment app home page
+@appointment_app.route('/')
+def appointment_home():
+    return render_template('appointment_time_prediction.html')  # Add a specific homepage for appointment app
+
+# Define a route for handling the form submission
+@appointment_app.route('/predict', methods=['POST'])
+def predict():
+    if request.method == 'POST':
+        data = {
+            #'Gender': request.form['gender'],
+            'Scheduled_Date': request.form['scheduled_date'],
+            'Appointment_Date': request.form['appointment_date'],
+            'Appointment_Hour': request.form['appointment_hour'],
+            'Age': request.form['age'],
+            'Alcoholism': request.form['alcoholism'],
+            'Hipertension': request.form['hipertension'],
+            'Diabetes': request.form['diabetes'],
+            'Cancelled': request.form['cancelled'],
+            'Rate_Of_Cancellation': request.form['rate_of_cancellation']
+            # Add other form fields here corresponding to your dataset columns
+        }
+
+        # Preprocess the input data
+        input_data = preprocess_input(data)
+
+        # Make predictions using the loaded model
+        prediction = model.predict(input_data)
+        
+        #Convert given floating point hours into HH:MM:SS format
+        prediction_hours = int(prediction)
+        prediction_minutes = int((prediction - prediction_hours) * 60)
+        prediction_seconds = int(((prediction - prediction_hours) * 60 - prediction_minutes) * 60)
+        prediction_time = f"{prediction_hours:02d}:{prediction_minutes:02d}:{prediction_seconds:02d}"
+
+        # Pass the prediction to the HTML template
+        return render_template('appointment_time_prediction.html', prediction=prediction_time)
+
+if __name__ == '__main__':
+    appointment_app.run(debug=True)
+
+.\main_app.py
+#main_app.py
+from flask import Flask, render_template
+from noshow_classification import noshow_app
+from appointment_time_prediction import appointment_app
+from stockmarketpred import stock_app
+
+app = Flask(__name__, template_folder='templates')
+
+# Register the blueprints for each sub-app
+app.register_blueprint(noshow_app, url_prefix='/noshow')
+app.register_blueprint(appointment_app, url_prefix='/appointment')
+app.register_blueprint(stock_app, url_prefix='/stock')
+
+# Define a route for the home page
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+.\noshow_classification.py
+# noshow_classification.py
+from flask import Flask, render_template, request, Blueprint
+import pandas as pd
+import joblib
+from sklearn.preprocessing import OrdinalEncoder
+
+noshow_app = Blueprint('noshow_app', __name__, template_folder='templates')
+
+# Load the trained machine learning model
+model = joblib.load('noshow_classification_model.pkl')  # Adjust the model file name if needed
+
+# Define the preprocessing function
+def preprocess_input(data):
+    # Assume 'data' is a dictionary containing user input
+    input_df = pd.DataFrame([data])
+    
+    input_df['Gender'] = input_df['Gender'].apply(lambda x: 1 if x.upper()=="M" or x.upper()=="MALE" else 0)
+
+    # Convert Scheduled_Date and Appointment_Date to datetime format
+    input_df['Scheduled_Date'] = pd.to_datetime(input_df['Scheduled_Date'])
+    input_df['Appointment_Date'] = pd.to_datetime(input_df['Appointment_Date'])
+    input_df['Alcoholism'] = input_df['Alcoholism'].apply(lambda x: 1 if x.lower()=="yes" or x.lower()=="y"  else 0)
+    input_df['Hipertension'] = input_df['Hipertension'].apply(lambda x: 1 if x.lower()=="yes" or x.lower()=="y"  else 0)
+    input_df['Diabetes'] = input_df['Diabetes'].apply(lambda x: 1 if x.lower()=="yes" or x.lower()=="y"  else 0)
+    input_df['Cancelled'] = input_df['Cancelled'].apply(lambda x: 1 if x.lower()=="yes" or x.lower()=="y"  else 0)
+    # Feature extraction
+    input_df['Day_Difference'] = (input_df['Appointment_Date'] - input_df['Scheduled_Date']).dt.days
+    input_df['Scheduled_Year'] = input_df['Scheduled_Date'].dt.year
+    input_df['Scheduled_Month'] = input_df['Scheduled_Date'].dt.month
+    input_df['Scheduled_Day'] = input_df['Scheduled_Date'].dt.day
+    input_df['Appointment_Month'] = input_df['Appointment_Date'].dt.month
+    input_df['Appointment_Day'] = input_df['Appointment_Date'].dt.day
+
+    # Drop datetime columns
+    input_df = input_df.drop(['Scheduled_Date', 'Appointment_Date'], axis=1)
+
+    # Convert 'Rate_Of_Cancellation' to float
+    input_df['Rate_Of_Cancellation'] = input_df['Rate_Of_Cancellation'].astype(float)
+
+    # Reorder columns to match the order during training
+    column_order = ['Cancelled', 'Scheduled_Month', 'Scheduled_Year', 'Diabetes', 'Appointment_Day', 'Day_Difference', 'Alcoholism', 'Hipertension', 'Scheduled_Day', 'Appointment_Month', 
+                    'Rate_Of_Cancellation', 'Gender']
+    
+    input_df = input_df[column_order]
+
+    return input_df
+
+# Define a route for the home page
+@noshow_app.route('/')
+def noshow_home():
+    return render_template('noshow_classification.html')
+
+# Define a route for handling the form submission
+@noshow_app.route('/predict', methods=['POST'])
+def predict():
+    if request.method == 'POST':
+        data = {
+            'Gender': request.form['gender'],
+            'Scheduled_Date': request.form['scheduled_date'],
+            'Appointment_Date': request.form['appointment_date'],
+            'Alcoholism': request.form['alcoholism'],
+            'Hipertension': request.form['hipertension'],
+            'Diabetes': request.form['diabetes'],
+            'Cancelled': request.form['cancelled'],
+            'Rate_Of_Cancellation': request.form['rate_of_cancellation']
+            # Add other form fields here corresponding to your dataset columns
+        }
+
+        # Preprocess the input data
+        input_data = preprocess_input(data)
+
+        # Make predictions using the loaded model
+        prediction = model.predict(input_data)
+
+        # Convert the prediction to 'Yes' or 'No'
+        prediction_text = 'Yes' if prediction[0] == 1 else 'No'
+
+        # Pass the prediction to the HTML template
+        return render_template('noshow_classification.html', prediction=prediction_text)
+
+if __name__ == '__main__':
+    noshow_app.run(debug=True)
+
+.\stockmarketpred.py
+# stockmarketpred.py
+from flask import Flask, render_template, request, Blueprint
+import pandas as pd
+import joblib
+import numpy as np
+from sklearn.preprocessing import OrdinalEncoder
+
+stock_app = Blueprint('stock_app', __name__, template_folder='templates')
+
+
+# Load the trained machine learning model
+model = joblib.load('stock_model.pkl')  # Adjust the model file name if needed
+X_scaler = joblib.load('X_scaler.pkl')
+y_scaler = joblib.load('y_scaler.pkl')
+
+def cleanup(df):
+    df.drop_duplicates(inplace=True)
+    df.dropna(inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    return df
+
+# Define the preprocessing function
+def preprocess_input(data):
+    df = pd.DataFrame(data, index=[0])
+    df = cleanup(df)
+    
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+    
+    #Feature Engineering
+    df['Year'] = df['Date'].dt.year
+    df['Month'] = df['Date'].dt.month
+    df['Day'] = df['Date'].dt.day
+    df['DayofWeek'] = df['Date'].dt.dayofweek
+    df['DayofYear'] = df['Date'].dt.dayofyear
+    df['Open-Delta'] = df['Open'] - df['Open'].shift(1)
+    df['Volume-Delta'] = df['Shares Traded'] - df['Shares Traded'].shift(1)
+    df['Turnover-Delta'] = df['Turnover (Crores)'] - df['Turnover (Crores)'].shift(1)
+    
+    # Additional Features
+    df['Open-Percent-Change'] = (df['Open'] - df['Open'].shift(1)) / df['Open'].shift(1) * 100
+    df['Volume-Percent-Change'] = (df['Shares Traded'] - df['Shares Traded'].shift(1)) / df['Shares Traded'].shift(1) * 100
+    df['Turnover-Percent-Change'] = (df['Turnover (Crores)'] - df['Turnover (Crores)'].shift(1)) / df['Turnover (Crores)'].shift(1) * 100
+
+    window_size = 5
+    df['Open-Moving-Avg'] = df['Open'].rolling(window=window_size).mean()
+    df['Volume-Moving-Avg'] = df['Shares Traded'].rolling(window=window_size).mean()
+    df['Turnover-Moving-Avg'] = df['Turnover (Crores)'].rolling(window=window_size).mean()
+
+    #df = pd.get_dummies(df, columns=['DayofWeek', 'Month'], drop_first=True)
+
+    df.drop(columns=['Date'], inplace=True)
+    columns = ['Turnover-Percent-Change', 'Open-Percent-Change', 'Volume-Percent-Change', 'Shares Traded', 'Open-Delta', 'DayofYear',
+       'Turnover (Crores)', 'Year', 'Volume-Moving-Avg', 'Open-Moving-Avg', 'Open', 'Turnover-Moving-Avg', 'Volume-Delta', 
+       'Turnover-Delta', 'Month']
+    df = pd.DataFrame(X_scaler.transform(df[columns]), columns=columns)
+    df.fillna(0, inplace=True)
+    df = cleanup(df)
+    
+    return df
+
+# Define a route for the stock app home page
+@stock_app.route('/')
+def stock_home():
+    return render_template('stockmarketpred.html')  # Add a specific homepage for stock app
+
+# Define a route for handling the form submission
+@stock_app.route('/predict', methods=['POST'])
+def predict():
+    if request.method == 'POST':
+        data = {
+            #'Gender': request.form['gender'],
+            'Date' : request.form['date'],
+            'Open' : request.form['open'],
+            'Shares Traded' : request.form['shares_traded'],
+            'Turnover (Crores)' : request.form['turnover'],
+            # Add other form fields here corresponding to your dataset columns
+        }
+        print("Got it!")
+        # Preprocess the input data
+        input_data = preprocess_input(data)
+        
+        print(data,"\n",input_data)
+
+        # Make predictions using the loaded model
+        prediction = model.predict(input_data)
+        prediction = y_scaler.inverse_transform(prediction)
+        print("Ans:",prediction,type(prediction))
+        
+        #Convert given floating point hours into HH:MM:SS format
+        answer = f"High: {prediction[0, 0]:.3f};    Low: {prediction[0, 1]:.3f};    Closing: {prediction[0, 2]:.3f}"
+
+        # Pass the prediction to the HTML template
+        return render_template('stockmarketpred.html', prediction=answer)
+
+if __name__ == '__main__':
+    stock_app.run(debug=True)
+
+.\static\form_styles.css
+/* form_styles.css */
+body, h1, form {
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+form {
+  max-width: 400px;
+  margin: 20px auto;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+input {
+  width: 100%;
+  padding: 5px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
+input[type="submit"] {
+  background-color: #3498db;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+input[type="submit"]:hover {
+  background-color: #2980b9;
+}
+
+button {
+  padding: 5px;
+  background-color: #333;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #555;
+}
+
+.theme-switch-button {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: #3498db;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  z-index: 999;
+  transition: background-color 0.3s ease, opacity 0.3s ease;
+}
+
+.theme-switch-button:hover {
+  background-color: #2980b9;
+}
+
+.light-mode {
+  background-color: #fff;
+  color: #333;
+}
+
+.dark-mode {
+  background-color: #181A1B;
+  color: #fff;
+}
+.\static\index_styles.css
+/* CSS Styles for a homepage */
+body {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color: #333;
+    margin: 20px;
+    transition: background-color 0.5s ease, color 0.5s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh; /* Ensure the body takes the full viewport height */
+}
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 300px;
+    background-color: #f1f1f1;
+    text-align: center; /* Center the text within the boxes */
+}
+
+li a {
+    display: block;
+    color: #000;
+    padding: 8px 16px;
+    text-decoration: none;
+}
+
+li a:hover {
+    background-color: #555;
+    color: white;
+}
+
+h1, h2, h3 {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color: #0066cc;
+    text-align: center; /* Center the text */
+}
+
+.light-mode {
+    background-color: #fff;
+    color: #333;
+}
+
+.dark-mode {
+    background-color: #181A1B;
+    color: #fff;
+}
+
+.dark-mode ul {
+    background-color: #202324;
+}
+
+.dark-mode li a {
+    color: #fff;
+}
+
+.theme-switch-button {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    z-index: 999;
+    transition: background-color 0.3s ease, opacity 0.3s ease;
+}
+
+.theme-switch {
+    width: 100px;
+    padding: 10px;
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.\static\scripts.js
+function toggleTheme() {
+    const body = document.body;
+    const themeIcon = document.getElementById('themeIcon');
+    const themeIconDark = document.getElementById('themeIconDark');
+
+    body.classList.toggle("light-mode");
+    body.classList.toggle("dark-mode");
+
+    // Toggle the visibility of the theme icons
+    themeIcon.style.display = themeIcon.style.display === 'none' ? 'inline-block' : 'none';
+    themeIconDark.style.display = themeIconDark.style.display === 'none' ? 'inline-block' : 'none';
+}
+function goBack() {
+    window.history.back();
+}
+.\templates\appointment_time_prediction.html
+<!-- appointment_time_prediction.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Time Prediction Model Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='form_styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <h1>Appointment Time Prediction Model Demo</h1>
+    <div id="themeSwitchButton" class="theme-switch-button" onclick="toggleTheme()">
+        <i id="themeIcon" class="fa-regular fa-sun"></i>
+        <i id="themeIconDark" class="fa-solid fa-moon" style="display: none;"></i>
+    </div>
+    <form method="POST" action="/appointment/predict">
+        <!--Gender(M:1, F:0): <input type="int" name="gender"><br>-->
+        Scheduled Date: <input type="date" name="scheduled_date"><br>
+        Appointment Date: <input type="date" name="appointment_date"><br>
+        Appointment Hour (24h): <input type="int" name="appointment_hour"><br>
+        Age: <input type="int" name="age"><br>
+        Alcoholism(Y/N): <input type="text" name="alcoholism"><br>
+        Hipertension(Y/N): <input type="text" name="hipertension"><br>
+        Diabetes(Y/N): <input type="text" name="diabetes"><br>
+        Cancelled(Y/N): <input type="text" name="cancelled"><br>
+        Rate of Cancellation: <input type="float" name="rate_of_cancellation"><br>
+        <input type="submit" value="Predict">
+    </form>
+    
+    <!-- Display the prediction result as text -->
+    {% if prediction %}
+        <h2>Prediction Result: {{ prediction }}</h2>
+    {% endif %}
+
+    <button onclick="goBack()">Go Back</button>
+
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>
+
+.\templates\index.html
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combined Flask App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index_styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <h1>Welcome to the Combined Flask App</h1>
+    <div id="themeSwitchButton" class="theme-switch-button" onclick="toggleTheme()">
+        <i id="themeIcon" class="fa-regular fa-sun"></i>
+        <i id="themeIconDark" class="fa-solid fa-moon" style="display: none;"></i>
+    </div>
+    <ul>
+        <li><a href="/noshow">Noshow Classification Model</a></li>
+        <li><a href="/appointment">Appointment Time Prediction Model</a></li>
+        <li><a href="/stock">Stock Market Prediction Model</a></li>
+    </ul>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>
+.\templates\noshow_classification.html
+<!-- noshow_classification.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noshow Classification Model Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='form_styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <h1>Noshow Classification Model Demo</h1>
+    <div id="themeSwitchButton" class="theme-switch-button" onclick="toggleTheme()">
+        <i id="themeIcon" class="fa-regular fa-sun"></i>
+        <i id="themeIconDark" class="fa-solid fa-moon" style="display: none;"></i>
+    </div>
+    <form method="POST" action="/noshow/predict">
+        Gender(M/F): <input type="text" name="gender"><br>
+        Scheduled Date: <input type="date" name="scheduled_date"><br>
+        Appointment Date: <input type="date" name="appointment_date"><br>
+        Alcoholism(Y/N): <input type="text" name="alcoholism"><br>
+        Hipertension(Y/N): <input type="text" name="hipertension"><br>
+        Diabetes(Y/N): <input type="text" name="diabetes"><br>
+        Cancelled(Y/N): <input type="text" name="cancelled"><br>
+        Rate of Cancellation: <input type="float" name="rate_of_cancellation"><br>
+        <!-- Add other input fields here -->
+        <input type="submit" value="Predict">
+    </form>
+
+    <!-- Display the prediction result as text -->
+    {% if prediction %}
+        <h2>Prediction Result: {{ prediction }}</h2>
+    {% endif %}
+
+    <button onclick="goBack()">Go Back</button>
+
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>
+
+.\templates\stockmarketpred.html
+<!-- stockmarketpred.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Price Prediction Model Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='form_styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+</head>
+<body>
+    <h1>Stock Market Prediction Model Demo</h1>
+    <div id="themeSwitchButton" class="theme-switch-button" onclick="toggleTheme()">
+        <i id="themeIcon" class="fa-regular fa-sun"></i>
+        <i id="themeIconDark" class="fa-solid fa-moon" style="display: none;"></i>
+    </div>
+    <form method="POST" action="/stock/predict">
+        Date: <input type="date" name="date"><br>
+        Open: <input type="float" name="open"><br>
+        Shares Traded: <input type="int" name="shares_traded"><br>
+        Turnover (crores): <input type="float" name="turnover"><br>
+        <input type="submit" value="Predict">
+    </form>
+
+    <!-- Display the prediction result as text -->
+    {% if prediction %}
+        <h2>Prediction Result: 
+            {{ prediction }}</h2>
+    {% endif %}
+
+    <button onclick="goBack()">Go Back</button>
+
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>
+
