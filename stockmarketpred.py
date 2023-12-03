@@ -24,7 +24,7 @@ def preprocess_input(data):
     df = pd.DataFrame(data, index=[0])
     df = cleanup(df)
     
-    df['Date'] = pd.to_datetime(df['Date'], format='%d-%b-%Y', errors='coerce')
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     
     #Feature Engineering
     df['Year'] = df['Date'].dt.year
