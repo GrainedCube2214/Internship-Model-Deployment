@@ -1,0 +1,27 @@
+<!-- base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Add other common head content here -->
+    <title>{% block title %}Your App{% endblock %}</title>
+    {% block css %}
+        <link rel="stylesheet" href="{{ url_for('static', filename='form_styles.css') }}">
+    {% endblock %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+    <script>
+        window.onload = function () {
+            setInitialTheme();
+        };
+    </script>
+</head>
+<body>
+    <div id="themeSwitchButton" class="theme-switch-button" onclick="toggleTheme()">
+        <i id="themeIcon" class="fa-regular fa-sun"></i>
+        <i id="themeIconDark" class="fa-solid fa-moon" style="display: none;"></i>
+    </div>
+    {% block content %}{% endblock %}
+</body>
+</html>

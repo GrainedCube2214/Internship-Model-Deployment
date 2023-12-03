@@ -465,6 +465,8 @@ h1, h2, h3 {
 }
 
 .\static\scripts.js
+// scripts.js
+
 function toggleTheme() {
     const body = document.body;
     const themeIcon = document.getElementById('themeIcon');
@@ -474,143 +476,163 @@ function toggleTheme() {
     body.classList.toggle("dark-mode");
 
     // Toggle the visibility of the theme icons
-    themeIcon.style.display = themeIcon.style.display === 'none' ? 'inline-block' : 'none';
-    themeIconDark.style.display = themeIconDark.style.display === 'none' ? 'inline-block' : 'none';
+    if (body.classList.contains('dark-mode')) {
+        themeIcon.style.display = 'none';
+        themeIconDark.style.display = 'inline-block';
+    } else {
+        themeIcon.style.display = 'inline-block';
+        themeIconDark.style.display = 'none';
+    }
+
+    // Store the selected theme in a cookie or local storage
+    const selectedTheme = body.classList.contains('dark-mode') ? 'dark' : 'light';
+    localStorage.setItem('selectedTheme', selectedTheme);
 }
+
+// Function to set the initial theme
+function setInitialTheme() {
+    const body = document.body;
+    const selectedTheme = localStorage.getItem('selectedTheme');
+
+    if (selectedTheme === 'dark') {
+        body.classList.add('dark-mode');
+    } else {
+        body.classList.remove('dark-mode');
+    }
+}
+
+// Set the initial theme when the script loads
+setInitialTheme();
+
 function goBack() {
     window.history.back();
 }
 .\templates\appointment_time_prediction.html
 <!-- appointment_time_prediction.html -->
+{% extends 'base.html' %}
+
+{% block title %}Appointment Time Prediction Model Demo{% endblock %}
+
+{% block content %}
+<h1>Appointment Time Prediction Model Demo</h1>
+<form method="POST" action="/appointment/predict">
+    Scheduled Date: <input type="date" name="scheduled_date"><br>
+    Appointment Date: <input type="date" name="appointment_date"><br>
+    Appointment Hour (24h): <input type="int" name="appointment_hour"><br>
+    Age: <input type="int" name="age"><br>
+    Alcoholism(Y/N): <input type="text" name="alcoholism"><br>
+    Hipertension(Y/N): <input type="text" name="hipertension"><br>
+    Diabetes(Y/N): <input type="text" name="diabetes"><br>
+    Cancelled(Y/N): <input type="text" name="cancelled"><br>
+    Rate of Cancellation: <input type="float" name="rate_of_cancellation"><br>
+    <input type="submit" value="Predict">
+</form>
+
+<!-- Display the prediction result as text -->
+{% if prediction %}
+    <h2>Prediction Result: {{ prediction }}</h2>
+{% endif %}
+
+<button onclick="goBack()">Go Back</button>
+{% endblock %}
+
+.\templates\base.html
+<!-- base.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Appointment Time Prediction Model Demo</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='form_styles.css') }}">
+    <!-- Add other common head content here -->
+    <title>{% block title %}Your App{% endblock %}</title>
+    {% block css %}
+        <link rel="stylesheet" href="{{ url_for('static', filename='form_styles.css') }}">
+    {% endblock %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+    <script>
+        window.onload = function () {
+            setInitialTheme();
+        };
+    </script>
 </head>
 <body>
-    <h1>Appointment Time Prediction Model Demo</h1>
-    <form method="POST" action="/appointment/predict">
-        <!--Gender(M:1, F:0): <input type="int" name="gender"><br>-->
-        Scheduled Date: <input type="date" name="scheduled_date"><br>
-        Appointment Date: <input type="date" name="appointment_date"><br>
-        Appointment Hour (24h): <input type="int" name="appointment_hour"><br>
-        Age: <input type="int" name="age"><br>
-        Alcoholism(Y/N): <input type="text" name="alcoholism"><br>
-        Hipertension(Y/N): <input type="text" name="hipertension"><br>
-        Diabetes(Y/N): <input type="text" name="diabetes"><br>
-        Cancelled(Y/N): <input type="text" name="cancelled"><br>
-        Rate of Cancellation: <input type="float" name="rate_of_cancellation"><br>
-        <input type="submit" value="Predict">
-    </form>
-    
-    <!-- Display the prediction result as text -->
-    {% if prediction %}
-        <h2>Prediction Result: {{ prediction }}</h2>
-    {% endif %}
-
-    <button onclick="goBack()">Go Back</button>
-
-    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+    <div id="themeSwitchButton" class="theme-switch-button" onclick="toggleTheme()">
+        <i id="themeIcon" class="fa-regular fa-sun"></i>
+        <i id="themeIconDark" class="fa-solid fa-moon" style="display: none;"></i>
+    </div>
+    {% block content %}{% endblock %}
 </body>
 </html>
 
 .\templates\index.html
 <!-- index.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Combined Flask App</title>
+{% extends 'base.html' %}
+
+{% block title %}Combined Flask App{% endblock %}
+
+{% block css %}
     <link rel="stylesheet" href="{{ url_for('static', filename='index_styles.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-    <h1>Welcome to the Combined Flask App</h1>
-    <div id="themeSwitchButton" class="theme-switch-button" onclick="toggleTheme()">
-        <i id="themeIcon" class="fa-regular fa-sun"></i>
-        <i id="themeIconDark" class="fa-solid fa-moon" style="display: none;"></i>
-    </div>
-    <ul>
-        <li><a href="/noshow">Noshow Classification Model</a></li>
-        <li><a href="/appointment">Appointment Time Prediction Model</a></li>
-        <li><a href="/stock">Stock Market Prediction Model</a></li>
-    </ul>
-    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
-</body>
-</html>
+{% endblock %}
+
+{% block content %}
+<h1>Welcome to the Combined Flask App</h1>
+<ul>
+    <li><a href="/noshow">Noshow Classification Model</a></li>
+    <li><a href="/appointment">Appointment Time Prediction Model</a></li>
+    <li><a href="/stock">Stock Market Prediction Model</a></li>
+</ul>
+{% endblock %}
 .\templates\noshow_classification.html
 <!-- noshow_classification.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Noshow Classification Model Demo</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='form_styles.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-    <h1>Noshow Classification Model Demo</h1>
-    <form method="POST" action="/noshow/predict">
-        Gender(M/F): <input type="text" name="gender"><br>
-        Scheduled Date: <input type="date" name="scheduled_date"><br>
-        Appointment Date: <input type="date" name="appointment_date"><br>
-        Alcoholism(Y/N): <input type="text" name="alcoholism"><br>
-        Hipertension(Y/N): <input type="text" name="hipertension"><br>
-        Diabetes(Y/N): <input type="text" name="diabetes"><br>
-        Cancelled(Y/N): <input type="text" name="cancelled"><br>
-        Rate of Cancellation: <input type="float" name="rate_of_cancellation"><br>
-        <!-- Add other input fields here -->
-        <input type="submit" value="Predict">
-    </form>
+{% extends 'base.html' %}
 
-    <!-- Display the prediction result as text -->
-    {% if prediction %}
-        <h2>Prediction Result: {{ prediction }}</h2>
-    {% endif %}
+{% block title %}Noshow Classification Model Demo{% endblock %}
 
-    <button onclick="goBack()">Go Back</button>
+{% block content %}
+<h1>Noshow Classification Model Demo</h1>
+<form method="POST" action="/noshow/predict">
+    Gender(M/F): <input type="text" name="gender"><br>
+    Scheduled Date: <input type="date" name="scheduled_date"><br>
+    Appointment Date: <input type="date" name="appointment_date"><br>
+    Alcoholism(Y/N): <input type="text" name="alcoholism"><br>
+    Hipertension(Y/N): <input type="text" name="hipertension"><br>
+    Diabetes(Y/N): <input type="text" name="diabetes"><br>
+    Cancelled(Y/N): <input type="text" name="cancelled"><br>
+    Rate of Cancellation: <input type="float" name="rate_of_cancellation"><br>
+    <!-- Add other input fields here -->
+    <input type="submit" value="Predict">
+</form>
 
-    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
-</body>
-</html>
+<!-- Display the prediction result as text -->
+{% if prediction %}
+    <h2>Prediction Result: {{ prediction }}</h2>
+{% endif %}
+
+<button onclick="goBack()">Go Back</button>
+{% endblock %}
 
 .\templates\stockmarketpred.html
 <!-- stockmarketpred.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Price Prediction Model Demo</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='form_styles.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-</head>
-<body>
-    <h1>Stock Market Prediction Model Demo</h1>
-    <form method="POST" action="/stock/predict">
-        Date: <input type="date" name="date"><br>
-        Open: <input type="float" name="open"><br>
-        Shares Traded: <input type="int" name="shares_traded"><br>
-        Turnover (crores): <input type="float" name="turnover"><br>
-        <input type="submit" value="Predict">
-    </form>
+{% extends 'base.html' %}
 
-    <!-- Display the prediction result as text -->
-    {% if prediction %}
-        <h2>Prediction Result: 
-            {{ prediction }}</h2>
-    {% endif %}
+{% block title %}Stock Price Prediction Model Demo{% endblock %}
 
-    <button onclick="goBack()">Go Back</button>
+{% block content %}
+<h1>Stock Market Prediction Model Demo</h1>
+<form method="POST" action="/stock/predict">
+    Date: <input type="date" name="date"><br>
+    Open: <input type="float" name="open"><br>
+    Shares Traded: <input type="int" name="shares_traded"><br>
+    Turnover (crores): <input type="float" name="turnover"><br>
+    <input type="submit" value="Predict">
+</form>
 
-    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
-</body>
-</html>
+<!-- Display the prediction result as text -->
+{% if prediction %}
+    <h2>Prediction Result: {{ prediction }}</h2>
+{% endif %}
+
+<button onclick="goBack()">Go Back</button>
+{% endblock %}
 

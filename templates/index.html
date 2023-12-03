@@ -1,31 +1,17 @@
 <!-- index.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Combined Flask App</title>
+{% extends 'base.html' %}
+
+{% block title %}Combined Flask App{% endblock %}
+
+{% block css %}
     <link rel="stylesheet" href="{{ url_for('static', filename='index_styles.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
-    <script>
-        // Call the setInitialTheme function after the window has loaded
-        window.onload = function () {
-            setInitialTheme();
-        };
-    </script>
-</head>
-<body>
-    <h1>Welcome to the Combined Flask App</h1>
-    <div id="themeSwitchButton" class="theme-switch-button" onclick="toggleTheme()">
-        <i id="themeIcon" class="fa-regular fa-sun"></i>
-        <i id="themeIconDark" class="fa-solid fa-moon" style="display: none;"></i>
-    </div>
-    <ul>
-        <li><a href="/noshow">Noshow Classification Model</a></li>
-        <li><a href="/appointment">Appointment Time Prediction Model</a></li>
-        <li><a href="/stock">Stock Market Prediction Model</a></li>
-    </ul>
-    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
-</body>
-</html>
+{% endblock %}
+
+{% block content %}
+<h1>Welcome to the Combined Flask App</h1>
+<ul>
+    <li><a href="/noshow">Noshow Classification Model</a></li>
+    <li><a href="/appointment">Appointment Time Prediction Model</a></li>
+    <li><a href="/stock">Stock Market Prediction Model</a></li>
+</ul>
+{% endblock %}
