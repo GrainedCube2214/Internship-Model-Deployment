@@ -10,10 +10,6 @@
 </head>
 <body>
     <h1>Appointment Time Prediction Model Demo</h1>
-    <div id="themeSwitchButton" class="theme-switch-button" onclick="toggleTheme()">
-        <i id="themeIcon" class="fa-regular fa-sun"></i>
-        <i id="themeIconDark" class="fa-solid fa-moon" style="display: none;"></i>
-    </div>
     <form method="POST" action="/appointment/predict">
         <!--Gender(M:1, F:0): <input type="int" name="gender"><br>-->
         Scheduled Date: <input type="date" name="scheduled_date"><br>
