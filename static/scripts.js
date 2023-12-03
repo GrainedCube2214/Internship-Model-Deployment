@@ -1,5 +1,6 @@
 // scripts.js
 
+// Function to toggle the theme
 function toggleTheme() {
     const body = document.body;
     const themeIcon = document.getElementById('themeIcon');
@@ -17,25 +18,10 @@ function toggleTheme() {
         themeIconDark.style.display = 'none';
     }
 
-    // Store the selected theme in a cookie or local storage
+    // Store the selected theme in local storage
     const selectedTheme = body.classList.contains('dark-mode') ? 'dark' : 'light';
     localStorage.setItem('selectedTheme', selectedTheme);
 }
-
-// Function to set the initial theme
-function setInitialTheme() {
-    const body = document.body;
-    const selectedTheme = localStorage.getItem('selectedTheme');
-
-    if (selectedTheme === 'dark') {
-        body.classList.add('dark-mode');
-    } else {
-        body.classList.remove('dark-mode');
-    }
-}
-
-// Set the initial theme when the script loads
-setInitialTheme();
 
 function goBack() {
     window.history.back();
