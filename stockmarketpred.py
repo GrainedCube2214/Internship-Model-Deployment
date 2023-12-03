@@ -49,9 +49,9 @@ def preprocess_input(data):
     #df = pd.get_dummies(df, columns=['DayofWeek', 'Month'], drop_first=True)
 
     df.drop(columns=['Date'], inplace=True)
-    columns = ['Turnover-Percent-Change', 'Open-Percent-Change', 'Volume-Percent-Change', 'Shares Traded', 'Open-Delta', 'DayofYear',
-       'Turnover (Crores)', 'Year', 'Volume-Moving-Avg', 'Open-Moving-Avg', 'Open', 'Turnover-Moving-Avg', 'Volume-Delta', 
-       'Turnover-Delta', 'Month']
+    columns = ['Open-Moving-Avg', 'Volume-Percent-Change', 'Volume-Delta', 'Shares Traded', 'Turnover (Crores)', 
+               'Turnover-Delta', 'Turnover-Moving-Avg', 'Month', 'DayofYear', 'Turnover-Percent-Change', 'Year', 
+               'Volume-Moving-Avg', 'Open', 'Open-Delta', 'Day', 'Open-Percent-Change']
     df = pd.DataFrame(X_scaler.transform(df[columns]), columns=columns)
     df.fillna(0, inplace=True)
     df = cleanup(df)
