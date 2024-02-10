@@ -4,9 +4,8 @@ Deployed models include: Noshhow classification, Appointment time prediction, St
 Training Work in this repository: https://github.com/GrainedCube2214/Data-Science-Internship
 
 ## Datasets used:
-- Noshow Classification
-    |----> noshow_data_v2 (1).csv
-- Appointment Time Prediction 
+- Noshow Classification -----------> noshow_data_v2 (1).csv
+- Appointment Time Prediction /
 - Stock Market Prediction   -------------> StockMarketData2015-2019.csv
 
 ## Prerequisite software:
