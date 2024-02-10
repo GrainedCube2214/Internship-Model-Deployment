@@ -5,7 +5,7 @@ Training Work in this repository: https://github.com/GrainedCube2214/Data-Scienc
 
 ## Datasets used:
 - Noshow Classification -----------> noshow_data_v2 (1).csv
-- Appointment Time Prediction /
+- Appointment Time Prediction -----------> noshow_data_v2 (1).csv
 - Stock Market Prediction   -------------> StockMarketData2015-2019.csv
 
 ## Prerequisite software:
