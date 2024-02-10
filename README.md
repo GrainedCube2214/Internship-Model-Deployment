@@ -1,11 +1,12 @@
 # Internship-Model-Deployment
 This is a deployment of the machine learning models made during my internship with KANINI Software from October 2023 to December 2023
-Currently deployed models include: Noshhow classification, Appointment time prediction, Stock value prediction.
+Deployed models include: Noshhow classification, Appointment time prediction, Stock value prediction.
+Training Work in this repository: https://github.com/GrainedCube2214/Data-Science-Internship
 
 ## Datasets used:
-- Noshow Classification     =======\
-                                    |----> noshow_data_v2 (1).csv
-- Appointment Time Prediction =====/ 
+- Noshow Classification
+    |----> noshow_data_v2 (1).csv
+- Appointment Time Prediction 
 - Stock Market Prediction   -------------> StockMarketData2015-2019.csv
 
 ## Prerequisite software:
